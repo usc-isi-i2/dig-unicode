@@ -10,7 +10,6 @@
 	
 	<properties>
 		<exec.mainClass>com.inferlink.memex.unicode.Extractor</exec.mainClass>
-<!-- 		<exec.arguments>-Xmx2G</exec.arguments> -->
 	</properties>
 
 	<dependencies>
@@ -37,10 +36,17 @@
 			<plugins>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-compiler-plugin</artifactId>
+					<artifactId>maven-shade-plugin</artifactId>
+					<executions>
+						<execution>
+							<phase>package</phase>
+							<goals>
+								<goal>shade</goal>
+							</goals>
+						</execution>
+					</executions>
 					<configuration>
-						<source>1.7</source>
-						<target>1.7</target>
+						<finalName>uber-${project.artifactId}-${project.version}</finalName>
 					</configuration>
 				</plugin>
 			</plugins>
