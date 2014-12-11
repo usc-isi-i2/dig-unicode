@@ -1,0 +1,49 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.inferlink</groupId>
+	<artifactId>unicodehistogramextractor</artifactId>
+	<packaging>jar</packaging>
+	<name>unicodehistogramextractor</name>
+	<version>0.1</version>
+	<url>http://maven.apache.org</url>
+	
+	<properties>
+		<exec.mainClass>com.inferlink.memex.unicode.Extractor</exec.mainClass>
+<!-- 		<exec.arguments>-Xmx2G</exec.arguments> -->
+	</properties>
+
+	<dependencies>
+ 		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20090211</version>
+			<type>jar</type>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>commons-collections</groupId>
+			<artifactId>commons-collections</artifactId>
+			<version>3.2.1</version>
+		</dependency>
+	</dependencies>
+	<repositories>
+
+	</repositories>
+	<build>
+		<finalName>unicodehistogramextractor</finalName>
+		<defaultGoal>package</defaultGoal>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<configuration>
+						<source>1.7</source>
+						<target>1.7</target>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+</project>
