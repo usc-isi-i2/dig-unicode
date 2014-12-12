@@ -288,27 +288,33 @@ categoryCodeDescriptions = {'Cc': "Other, Control",
 def categoryCodeDescription(category):
     return categoryCodeDescriptions.get(category, "Not Available")
 
+        
+def analyze(part):
+    content = part["text"]
+    contentChars = []
+    contentHisto = Counter()
+    contentMetadataHisto = Counter()
+    for c in content:
+        if not isAscii(c):
+            contentHisto[c] += 1
+            contentChars.append(c)
+            contentMetadataHisto["category:" + categoryCodeDescription(unicodedata.category(c))] += 1
+            # Normal form KD
+            # Of minor importance
+            # contentMetadataHisto["normalized:" + unicodedata.normalize(c.decode('utf-8'),'NFKD')] += 1
+            contentMetadataHisto["block:" + str(block(c))] += 1 
+    part["unicodeHistogram"] = contentHisto
+    part["unicodeText"] = " ".join(contentChars)
+    part["unicodeMetadataHistogram"] = contentMetadataHisto
+    return part
+
 for line in sys.stdin:
     try:
         (url, jrep) = line.split('\t')
         d = json.loads(jrep)
 
-        body = d["hasBodyPart"]["text"]
-        bodyChars = []
-        bodyHisto = Counter()
-        bodyMetadataHisto = Counter()
-        for c in body:
-            if not isAscii(c):
-                bodyHisto[c] += 1
-                bodyChars.append(c)
-                bodyMetadataHisto["category:" + categoryCodeDescription(unicodedata.category(c))] += 1
-                # Normal form KD
-                # Of minor importance
-                # bodyMetadataHisto["normalized:" + unicodedata.normalize(c.decode('utf-8'),'NFKD')] += 1
-                bodyMetadataHisto["block:" + block(c)] += 1 
-        d["hasBodyPart"]["unicodeHistogram"] = bodyHisto
-        d["hasBodyPart"]["unicodeText"] = " ".join(bodyChars)
-        d["hasBodyPart"]["unicodeMetadataHistogram"] = bodyMetadataHisto
+        analyze(d["hasBodyPart"])
+        analyze(d["hasTitlePart"])
 
         print url + "\t",
         json.dump(d, sys.stdout, sort_keys=True)
