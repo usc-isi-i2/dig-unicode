@@ -7,11 +7,16 @@ except:
 from collections import Counter
 import unicodedata
 
+from time import strftime, gmtime
+
 def isAscii(c):
     try:
         return ord(c) <= 127
     except:
         return False
+
+def gentime():
+    return strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
 # From http://stackoverflow.com/a/245072
 
@@ -315,6 +320,9 @@ for line in sys.stdin:
 
         analyze(d["hasBodyPart"])
         analyze(d["hasTitlePart"])
+        # insert gmtime
+        # ensure it doesn't collide with any other gentime
+        d["unicodeGentime"] = gentime()
 
         print url + "\t",
         json.dump(d, sys.stdout, sort_keys=True)
@@ -322,4 +330,3 @@ for line in sys.stdin:
     except ValueError as e:
         print >> sys.stderr, e
         pass
-
