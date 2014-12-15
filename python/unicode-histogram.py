@@ -16,17 +16,25 @@ from time import strftime, gmtime
 """
 12 December 2014
 for each of {body, title}:
-  the unicode_signature is the sequence of >ascii codepoints, in order, space separated
-  the unicode_catalog is the bag of >ascii codepoints, sorted/agglomerated, space separated
-  the unicode_histogram is a json-encoded python dict/json object mapping codepoint to count
+  the unicodeSignature is the sequence of >ascii codepoints, in order, space-separated
+  the unicodeCatalog is the bag of >ascii codepoints, sorted/agglomerated using space, comma-separated
+  the unicodeHistogram is a json-encoded python dict/json object mapping codepoint to count
 
-  the unicode_metadata_signature is the sequence of metadata descriptors of the form
-     block:<block name> or category:<category name>, in order, space separated
-  the unicode_metadata_catalog  the unicode_metadata_signature is the bag of metadata descriptors, sorted/agglomerated, space separated
-     block:<block name> or category:<category name>, in order, space separated  
-  the unicode_metadata_histogram json-encoded python dict/json object mapping metadata descriptor to count
+  the unicodeBlockSignature is the sequence of block descriptors (of all >ascii), in order, space-separated
+  the unicodeBlockCatalog is the bag of block descriptors, sorted/agglomerated using space, comma-separated
+  the unicodeBlockHistogram is a json-encoded python dict/json object mapping block descriptor to count
+
+  the unicodeCategorySignature is the sequence of category descriptors (of all >ascii), in order, space-separated
+  the unicodeCategoryCatalog is the bag of category descriptors, sorted/agglomerated using space, comma-separated
+  the unicodeCategoryHistogram is a json-encoded python dict/json object mapping category descriptor to count
+
+  where block and category descriptors are defined via
+    # From http://stackoverflow.com/a/245072
+    # retrieved from http://unicode.org/Public/UNIDATA/Blocks.txt
+    # Blocks-5.1.0.txt
+    # Date: 2008-03-20, 17:41:00 PDT [KW]
+  and is formatted to using _ rather than ,/space/-
 """
-
 
 def isAscii(c):
     try:
@@ -342,19 +350,15 @@ def analyze(part):
             codepointSeq.append(c)
             cat = fmtMetadatum(c, 'category')
             blk = fmtMetadatum(c, 'block')
-            print >> sys.stderr, "Code point for %x" % ord(c),
             if cat:
                 categoryHisto[cat] += 1
                 categorySeq.append(cat)
-                print >> sys.stderr, " has category %s" % cat,
             if blk:
                 blockHisto[blk] += 1
                 blockSeq.append(blk)
-                print >> sys.stderr, " has block %s" % blk
             # Normal form KD
             # presumed of minor importance: omitted for now
             # categoryHisto["normalized:" + unicodedata.normalize(c.decode('utf-8'),'NFKD')] += 1
-            print >> sys.stderr
     contentElements = codepointSeq
     # Histogram: JSON-encoded string repn of the dict
     part["unicodeHistogram"] = json.dumps(codepointHisto)
@@ -392,51 +396,28 @@ def analyze(part):
         blockCatalogElements.append(" ".join([k for _ in xrange(v)]))
     part["unicodeBlockCatalog"] = ", ".join(blockCatalogElements)
 
-    # # building up a bag
-    # lastCategory = None
-    # categoryList = []
-    # for element in categorySeq:
-    #     if element == lastCategory and categoryList:
-    #         categoryList.append(" ")
-    #     categoryList.append(element)
-    #     lastCategory = element
-    # categoryCatalog = "".join(categoryList)
-    # part["unicodeCategoryCatalog"] = categoryCatalog
-
-
-    # lastBlock = None
-    # blockList = []
-    # for element in ContentBlockElements:
-    #     if element == lastBlock and blockList:
-    #         blockList.append(" ")
-    #     blockList.append(element)
-    #     lastBlock = element
-    # blockCatalog = "".join(blockList)
-    # part["unicodeBlockCatalog"] = blockCatalog 
-
-    # part["unicodeCategoryHistogram"] = categoryHisto
     return part
 
-# test
-HEART = u'\u2665'
-SMILY = u'\u263a'
-TSU = u'\u30C4'
-LEFT = u'\u27E8'
-RIGHT = u'\u27E9'
-EURO = u'\u20AC'
+# Test data
+# HEART = u'\u2665'
+# SMILY = u'\u263a'
+# TSU = u'\u30C4'
+# LEFT = u'\u27E8'
+# RIGHT = u'\u27E9'
+# EURO = u'\u20AC'
 
-if True:
+# if True:
 
-   TESTUNICODE = LEFT + "h" + EURO + "llo " + HEART + HEART + SMILY + TSU + " goodby" + EURO + " " + SMILY + TSU + HEART + HEART + HEART + HEART + RIGHT
+#    TESTUNICODE = LEFT + "h" + EURO + "llo " + HEART + HEART + SMILY + TSU + " goodby" + EURO + " " + SMILY + TSU + HEART + HEART + HEART + HEART + RIGHT
 
-   print len(TESTUNICODE)
-   print json.dumps(TESTUNICODE)
+#    print len(TESTUNICODE)
+#    print json.dumps(TESTUNICODE)
 
-   TESTDOC = {"@context": "http://localhost:8080/publish/JSON/WSP1WS6-select unix_timestamp(a_importtime)*1000 as timestamp, a_* from ads a join sample s on a_id=s_id limit 50-context.json","schema:provider": {"a": "Organization", "uri": "http://memex.zapto.org/data/organization/1"}, "snapshotUri": "http://memex.zapto.org/data/page/850753E7323B188B93E6E28F730F2BFBFB1CE00B/1396493689000/raw","a": "WebPage","dateCreated": "2013-09-24T18:28:00","hasBodyPart": {"text": TESTUNICODE, "a": "WebPageElement"}, "hasTitlePart": {"text": "\u270b\u270b\u270bOnly Best \u270c\u270c\u270c Forget The Rest \u270b\u270b\u270b Outcall Specials TONIGHT \u270c\ud83d\udc8b\ud83d\udc45 Sexy Blonde is UP LATE \ud83d\udc9c\ud83d\udc9b\u270b\u270c - 25", "a": "WebPageElement"}, "uri": "http://memex.zapto.org/data/page/850753E7323B188B93E6E28F730F2BFBFB1CE00B/1396493689000/processed"}
+#    TESTDOC = {"@context": "http://localhost:8080/publish/JSON/WSP1WS6-select unix_timestamp(a_importtime)*1000 as timestamp, a_* from ads a join sample s on a_id=s_id limit 50-context.json","schema:provider": {"a": "Organization", "uri": "http://memex.zapto.org/data/organization/1"}, "snapshotUri": "http://memex.zapto.org/data/page/850753E7323B188B93E6E28F730F2BFBFB1CE00B/1396493689000/raw","a": "WebPage","dateCreated": "2013-09-24T18:28:00","hasBodyPart": {"text": TESTUNICODE, "a": "WebPageElement"}, "hasTitlePart": {"text": "\u270b\u270b\u270bOnly Best \u270c\u270c\u270c Forget The Rest \u270b\u270b\u270b Outcall Specials TONIGHT \u270c\ud83d\udc8b\ud83d\udc45 Sexy Blonde is UP LATE \ud83d\udc9c\ud83d\udc9b\u270b\u270c - 25", "a": "WebPageElement"}, "uri": "http://memex.zapto.org/data/page/850753E7323B188B93E6E28F730F2BFBFB1CE00B/1396493689000/processed"}
 
-   analyze(TESTDOC["hasBodyPart"])
-   json.dump(TESTDOC, sys.stdout, indent=4);
-   exit(0)
+#    analyze(TESTDOC["hasBodyPart"])
+#    json.dump(TESTDOC, sys.stdout, indent=4);
+#    exit(0)
 
 for line in sys.stdin:
     try:
