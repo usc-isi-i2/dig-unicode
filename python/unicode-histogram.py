@@ -1,13 +1,32 @@
-import sys
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
+import sys
+import re
 try:
     import simplejson as json
 except:
     import json
+
 from collections import Counter
 import unicodedata
 
 from time import strftime, gmtime
+
+"""
+12 December 2014
+for each of {body, title}:
+  the unicode_signature is the sequence of >ascii codepoints, in order, space separated
+  the unicode_catalog is the bag of >ascii codepoints, sorted/agglomerated, space separated
+  the unicode_histogram is a json-encoded python dict/json object mapping codepoint to count
+
+  the unicode_metadata_signature is the sequence of metadata descriptors of the form
+     block:<block name> or category:<category name>, in order, space separated
+  the unicode_metadata_catalog  the unicode_metadata_signature is the bag of metadata descriptors, sorted/agglomerated, space separated
+     block:<block name> or category:<category name>, in order, space separated  
+  the unicode_metadata_histogram json-encoded python dict/json object mapping metadata descriptor to count
+"""
+
 
 def isAscii(c):
     try:
@@ -18,18 +37,34 @@ def isAscii(c):
 def gentime():
     return strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
+def fmtCodepoint(codepoint, style):
+    return codepoint
+
+def fmtMetadatum(metadatum, style):
+    def fmtValue(s):
+        return re.sub("[ -]", "_", re.sub(",", "", unicode(s)))
+
+    if style=="category":
+        category = categoryCodeDescription(unicodedata.category(metadatum))
+        # return "category:" + fmtValue(category)
+        return fmtValue(category)
+    elif style=="block":
+        # return "block:" + fmtValue(block(metadatum))
+        return fmtValue(block(metadatum))
+    else:
+        return None
+
 # From http://stackoverflow.com/a/245072
 
 _blocks = []
 
 def _initBlocks(text):
-  import re
-  pattern = re.compile(r'([0-9A-F]+)\.\.([0-9A-F]+);\ (\S.*\S)')
-  for line in text.splitlines():
-    m = pattern.match(line)
-    if m:
-      start, end, name = m.groups()
-      _blocks.append((int(start, 16), int(end, 16), name))
+    pattern = re.compile(r'([0-9A-F]+)\.\.([0-9A-F]+);\ (\S.*\S)')
+    for line in text.splitlines():
+        m = pattern.match(line)
+        if m:
+            start, end, name = m.groups()
+            _blocks.append((int(start, 16), int(end, 16), name))
 
 # retrieved from http://unicode.org/Public/UNIDATA/Blocks.txt
 _initBlocks('''
@@ -238,80 +273,170 @@ F0000..FFFFF; Supplementary Private Use Area-A
 ''')
 
 def block(ch):
-  '''
-  Return the Unicode block name for ch, or None if ch has no block.
+    '''
+    Return the Unicode block name for ch, or None if ch has no block.
+    
+    >>> block(u'a')
+    'Basic Latin'
+    >>> block(unichr(0x0b80))
+    'Tamil'
+    >>> block(unichr(0xe0080))
+    
+    '''
 
-  >>> block(u'a')
-  'Basic Latin'
-  >>> block(unichr(0x0b80))
-  'Tamil'
-  >>> block(unichr(0xe0080))
-
-  '''
-
-  assert isinstance(ch, unicode) and len(ch) == 1, repr(ch)
-  cp = ord(ch)
-  for start, end, name in _blocks:
-    if start <= cp <= end:
-      return name
+    assert isinstance(ch, unicode) and len(ch) == 1, repr(ch)
+    cp = ord(ch)
+    for start, end, name in _blocks:
+        if start <= cp <= end:
+            return name
 
 categoryCodeDescriptions = {'Cc': "Other, Control",
-                     'Cf': "Other, Format",
-                     # 'Cn': "Other, Not Assigned (no characters in the file have this property)",
-                     'Cn': "Other, Not Assigned",
-                     'Co': "Other, Private Use",
-                     'Cs': "Other, Surrogate",
-                     'LC': "Letter, Cased",
-                     'Ll': "Letter, Lowercase",
-                     'Lm': "Letter, Modifier",
-                     'Lo': "Letter, Other",
-                     'Lt': "Letter, Titlecase",
-                     'Lu': "Letter, Uppercase",
-                     'Mc': "Mark, Spacing Combining",
-                     'Me': "Mark, Enclosing",
-                     'Mn': "Mark, Nonspacing",
-                     'Nd': "Number, Decimal Digit",
-                     'Nl': "Number, Letter",
-                     'No': "Number, Other",
-                     'Pc': "Punctuation, Connector",
-                     'Pd': "Punctuation, Dash",
-                     'Pe': "Punctuation, Close",
-                     # 'Pf': "Punctuation, Final quote (may behave like Ps or Pe depending on usage)",
-                     # 'Pi': "Punctuation, Initial quote (may behave like Ps or Pe depending on usage)",
-                     'Pf': "Punctuation, Final quote",
-                     'Pi': "Punctuation, Initial quote",
-                     'Po': "Punctuation, Other",
-                     'Ps': "Punctuation, Open",
-                     'Sc': "Symbol, Currency",
-                     'Sk': "Symbol, Modifier",
-                     'Sm': "Symbol, Math",
-                     'So': "Symbol, Other",
-                     'Zl': "Separator, Line",
-                     'Zp': "Separator, Paragraph",
-                     'Zs': "Separator, Space"}
+                            'Cf': "Other, Format",
+                            # 'Cn': "Other, Not Assigned (no characters in the file have this property)",
+                            'Cn': "Other, Not Assigned",
+                            'Co': "Other, Private Use",
+                            'Cs': "Other, Surrogate",
+                            'LC': "Letter, Cased",
+                            'Ll': "Letter, Lowercase",
+                            'Lm': "Letter, Modifier",
+                            'Lo': "Letter, Other",
+                            'Lt': "Letter, Titlecase",
+                            'Lu': "Letter, Uppercase",
+                            'Mc': "Mark, Spacing Combining",
+                            'Me': "Mark, Enclosing",
+                            'Mn': "Mark, Nonspacing",
+                            'Nd': "Number, Decimal Digit",
+                            'Nl': "Number, Letter",
+                            'No': "Number, Other",
+                            'Pc': "Punctuation, Connector",
+                            'Pd': "Punctuation, Dash",
+                            'Pe': "Punctuation, Close",
+                            # 'Pf': "Punctuation, Final quote (may behave like Ps or Pe depending on usage)",
+                            # 'Pi': "Punctuation, Initial quote (may behave like Ps or Pe depending on usage)",
+                            'Pf': "Punctuation, Final quote",
+                            'Pi': "Punctuation, Initial quote",
+                            'Po': "Punctuation, Other",
+                            'Ps': "Punctuation, Open",
+                            'Sc': "Symbol, Currency",
+                            'Sk': "Symbol, Modifier",
+                            'Sm': "Symbol, Math",
+                            'So': "Symbol, Other",
+                            'Zl': "Separator, Line",
+                            'Zp': "Separator, Paragraph",
+                            'Zs': "Separator, Space"}
 
 def categoryCodeDescription(category):
     return categoryCodeDescriptions.get(category, "Not Available")
 
-        
 def analyze(part):
     content = part["text"]
-    contentChars = []
-    contentHisto = Counter()
-    contentMetadataHisto = Counter()
+    codepointSeq = []
+    categorySeq = []
+    blockSeq = []
+    codepointHisto = Counter()
+    categoryHisto = Counter()
+    blockHisto = Counter()
     for c in content:
         if not isAscii(c):
-            contentHisto[c] += 1
-            contentChars.append(c)
-            contentMetadataHisto["category:" + categoryCodeDescription(unicodedata.category(c))] += 1
+            codepointHisto[c] += 1
+            codepointSeq.append(c)
+            cat = fmtMetadatum(c, 'category')
+            blk = fmtMetadatum(c, 'block')
+            print >> sys.stderr, "Code point for %x" % ord(c),
+            if cat:
+                categoryHisto[cat] += 1
+                categorySeq.append(cat)
+                print >> sys.stderr, " has category %s" % cat,
+            if blk:
+                blockHisto[blk] += 1
+                blockSeq.append(blk)
+                print >> sys.stderr, " has block %s" % blk
             # Normal form KD
-            # Of minor importance
-            # contentMetadataHisto["normalized:" + unicodedata.normalize(c.decode('utf-8'),'NFKD')] += 1
-            contentMetadataHisto["block:" + str(block(c))] += 1 
-    part["unicodeHistogram"] = contentHisto
-    part["unicodeText"] = " ".join(contentChars)
-    part["unicodeMetadataHistogram"] = contentMetadataHisto
+            # presumed of minor importance: omitted for now
+            # categoryHisto["normalized:" + unicodedata.normalize(c.decode('utf-8'),'NFKD')] += 1
+            print >> sys.stderr
+    contentElements = codepointSeq
+    # Histogram: JSON-encoded string repn of the dict
+    part["unicodeHistogram"] = json.dumps(codepointHisto)
+    # Signature: sequence of codepoints
+    part["unicodeSignature"] = " ".join(codepointSeq)
+    # Catalog: bag of codepoints
+    codepointCatalogElements = []
+    for k in sorted(codepointHisto.keys()):
+        v = codepointHisto[k]
+        # v copies of this key
+        codepointCatalogElements.append(" ".join([k for _ in xrange(v)]))
+    part["unicodeCatalog"] = ", ".join(codepointCatalogElements)
+
+    # Histogram: JSON-encoded string repn of the dict
+    part["unicodeCategoryHistogram"] = json.dumps(categoryHisto)
+    # Signature: sequence of codepoints
+    part["unicodeCategorySignature"] = " ".join(categorySeq)
+    # Catalog: bag of categories
+    categoryCatalogElements = []
+    for k in sorted(categoryHisto.keys()):
+        v = categoryHisto[k]
+        # v copies of this key
+        categoryCatalogElements.append(" ".join([k for _ in xrange(v)]))
+    part["unicodeCategoryCatalog"] = ", ".join(categoryCatalogElements)
+
+    # Histogram: JSON-encoded string repn of the dict
+    part["unicodeBlockHistogram"] = json.dumps(blockHisto)
+    # Signature: sequence of codepoints
+    part["unicodeBlockSignature"] = " ".join(blockSeq)
+    # Catalog: bag of blocks
+    blockCatalogElements = []
+    for k in sorted(blockHisto.keys()):
+        v = blockHisto[k]
+        # v copies of this key
+        blockCatalogElements.append(" ".join([k for _ in xrange(v)]))
+    part["unicodeBlockCatalog"] = ", ".join(blockCatalogElements)
+
+    # # building up a bag
+    # lastCategory = None
+    # categoryList = []
+    # for element in categorySeq:
+    #     if element == lastCategory and categoryList:
+    #         categoryList.append(" ")
+    #     categoryList.append(element)
+    #     lastCategory = element
+    # categoryCatalog = "".join(categoryList)
+    # part["unicodeCategoryCatalog"] = categoryCatalog
+
+
+    # lastBlock = None
+    # blockList = []
+    # for element in ContentBlockElements:
+    #     if element == lastBlock and blockList:
+    #         blockList.append(" ")
+    #     blockList.append(element)
+    #     lastBlock = element
+    # blockCatalog = "".join(blockList)
+    # part["unicodeBlockCatalog"] = blockCatalog 
+
+    # part["unicodeCategoryHistogram"] = categoryHisto
     return part
+
+# test
+HEART = u'\u2665'
+SMILY = u'\u263a'
+TSU = u'\u30C4'
+LEFT = u'\u27E8'
+RIGHT = u'\u27E9'
+EURO = u'\u20AC'
+
+if True:
+
+   TESTUNICODE = LEFT + "h" + EURO + "llo " + HEART + HEART + SMILY + TSU + " goodby" + EURO + " " + SMILY + TSU + HEART + HEART + HEART + HEART + RIGHT
+
+   print len(TESTUNICODE)
+   print json.dumps(TESTUNICODE)
+
+   TESTDOC = {"@context": "http://localhost:8080/publish/JSON/WSP1WS6-select unix_timestamp(a_importtime)*1000 as timestamp, a_* from ads a join sample s on a_id=s_id limit 50-context.json","schema:provider": {"a": "Organization", "uri": "http://memex.zapto.org/data/organization/1"}, "snapshotUri": "http://memex.zapto.org/data/page/850753E7323B188B93E6E28F730F2BFBFB1CE00B/1396493689000/raw","a": "WebPage","dateCreated": "2013-09-24T18:28:00","hasBodyPart": {"text": TESTUNICODE, "a": "WebPageElement"}, "hasTitlePart": {"text": "\u270b\u270b\u270bOnly Best \u270c\u270c\u270c Forget The Rest \u270b\u270b\u270b Outcall Specials TONIGHT \u270c\ud83d\udc8b\ud83d\udc45 Sexy Blonde is UP LATE \ud83d\udc9c\ud83d\udc9b\u270b\u270c - 25", "a": "WebPageElement"}, "uri": "http://memex.zapto.org/data/page/850753E7323B188B93E6E28F730F2BFBFB1CE00B/1396493689000/processed"}
+
+   analyze(TESTDOC["hasBodyPart"])
+   json.dump(TESTDOC, sys.stdout, indent=4);
+   exit(0)
 
 for line in sys.stdin:
     try:
